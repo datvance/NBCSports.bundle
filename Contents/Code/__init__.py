@@ -131,6 +131,7 @@ def CreateVideoObject(url, title, summary, thumb, duration, tags, include_contai
 
     video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
     mp4 = video_details.get('src')
+    log("mp4: " + mp4)
 
     video_object = VideoClipObject(
         key=Callback(CreateVideoObject,
@@ -146,10 +147,11 @@ def CreateVideoObject(url, title, summary, thumb, duration, tags, include_contai
         summary=summary,
         tags=tags,
         duration=duration,
+        thumb=thumb,
         items=[
                 MediaObject(
                         parts = [
-                                PartObject(key=mp4)
+                                PartObject(key=mp4, duration=duration)
                         ],
                         container=Container.MP4,
                         audio_codec=AudioCodec.AAC,
