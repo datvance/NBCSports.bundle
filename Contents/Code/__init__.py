@@ -1,3 +1,4 @@
+DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
 PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
 THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/"
@@ -26,7 +27,8 @@ def Start():
     VideoClipObject.thumb = R(ICON)
 
     # Set the default cache time
-    HTTP.CacheTime = CACHE_1HOUR
+    if not DEBUG:
+        HTTP.CacheTime = CACHE_1HOUR
     HTTP.Headers['User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
 
 ####################################################################################################
@@ -38,6 +40,7 @@ def MainMenu():
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
     categories = page.xpath('//ul[@class = "video-category-nav"]/li/a')
+    log("Categoreies" + len(categories))
 
     for category in categories:
         cat_id = category.get('href').replace('/video/', '')
@@ -48,6 +51,8 @@ def MainMenu():
                 logo = R(logo + '.jpg')
             else:
                 logo = R(DEFAULT_LOGO)
+
+            log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
 
             oc.add(DirectoryObject(key=Callback(ChannelVideoCategory, id=cat_id, name=CleanName(name)), title=name, thumb=logo))
 
@@ -107,3 +112,7 @@ def CleanName(name):
         name = name.replace(trash, crap)
 
     return name.strip()
+
+def log(str):
+    if DEBUG:
+        Log(str)
