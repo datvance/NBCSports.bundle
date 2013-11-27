@@ -108,14 +108,13 @@ def ChannelVideoCategory(id, name):
         except:
             tags = []
 
-        oc.add(VideoClipObject(
+        oc.add(CreateVideoObject(
             url=url,
             title=CleanName(name),
-            thumb=thumb,
             summary=summary,
+            thumb=thumb,
             duration=duration,
-            tags=tags
-        ))
+            tags=tags))
 
     # It's possible that there is actually no vidoes are available for the ipad. Unfortunately, they
     # still provide us with empty containers...
@@ -123,6 +122,46 @@ def ChannelVideoCategory(id, name):
         return ObjectContainer(header=name, message="There are no titles available for the requested item.")
 
     return oc
+
+
+def CreateVideoObject(url, title, summary, thumb, duration, tags, include_container=False):
+
+    video_hash = url.split('/')[-1]
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    mp4 = video_details.get('src')
+
+    video_object = VideoClipObject(
+        key=Callback(CreateVideoObject,
+                        url=url,
+                        title=title,
+                        summary=summary,
+                        thumb=thumb,
+                        duration=duration,
+                        tags=tags,
+                        include_container=True),
+        rating_key=url,
+        title=title,
+        summary=summary,
+        tags=tags,
+        duration=duration,
+        items=[
+                MediaObject(
+                        parts = [
+                                PartObject(key=mp4)
+                        ],
+                        container=container.MP4,
+                        audio_codec=AudioCodec.AAC,
+                        audio_channels=2
+                )
+        ]
+    )
+
+    if include_container:
+            return ObjectContainer(objects=[video_object])
+    else:
+            return video_object
 
 
 ####################################################################################################
