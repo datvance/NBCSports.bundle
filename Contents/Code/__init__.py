@@ -5,6 +5,8 @@ THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/pub
 SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
 SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
 
+RE_VIDEO_HASH = Regex("media-theplatform/(.+?)\.jpg")
+
 NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
@@ -79,7 +81,11 @@ def ChannelVideoCategory(id, name):
     for index in range(num_thumbs):
         name = titles[index]
         thumb = thumbs[index]
-        video_hash = thumb.replace(THUMB_URL, '').split('.', 1)[0]
+        video_hash = RE_VIDEO_HASH.search(content).group(0)
+        if not video_hash:
+            continue
+
+        log("Hash: %s, Title: %s" % (video_hash, name))
 
         # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
         smil = XML.ElementFromURL(SMIL_URL % video_hash)
