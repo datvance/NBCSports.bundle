@@ -151,7 +151,7 @@ def CreateVideoObject(url, title, summary, thumb, duration, tags, include_contai
                         parts = [
                                 PartObject(key=mp4)
                         ],
-                        container=container.MP4,
+                        container=Container.MP4,
                         audio_codec=AudioCodec.AAC,
                         audio_channels=2
                 )
