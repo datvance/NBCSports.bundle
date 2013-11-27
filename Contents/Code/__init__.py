@@ -81,7 +81,7 @@ def ChannelVideoCategory(id, name):
     for index in range(num_thumbs):
         name = titles[index]
         thumb = thumbs[index]
-        video_hash = RE_VIDEO_HASH.search(thumb).group(0)
+        video_hash = RE_VIDEO_HASH.search(thumb).group(1)
         if not video_hash:
             continue
 
