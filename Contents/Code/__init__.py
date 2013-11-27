@@ -101,7 +101,7 @@ def ChannelVideoCategory(id, name):
             tags = []
 
         oc.add(VideoClipObject(
-            url=url,
+            #url=url,
             title=CleanName(name),
             thumb=thumb,
             summary=summary,
