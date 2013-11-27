@@ -36,13 +36,19 @@ def MediaObjectsForURL(url):
 
     Log.Debug('MediaObjectsForURL('+url+')')
 
+    video_hash = url.split('/')[-1]
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    mp4 = video_details.get('src')
+
     return [
         MediaObject(
             video_codec=VideoCodec.H264,
             audio_codec=AudioCodec.AAC,
             audio_channels=2,
             container='mp4',
-            parts=[PartObject(key=Callback(PlayVideo, url=url))])]
+            parts=[PartObject(key=mp4)])]
 
 
 def PlayVideo(url):
