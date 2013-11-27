@@ -1,6 +1,9 @@
 ####################################################################################################
 def MetadataObjectForURL(url):
-    video_hash = url.rsplit('/')[0]
+
+    log('MetadataObjectForURL('+url+')')
+
+    video_hash = url.split('/')[-1]
 
     # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
     smil = XML.ElementFromURL(SMIL_URL % video_hash)
@@ -27,6 +30,8 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
+    log('MediaObjectsForURL('+url+')')
+
     return [
         MediaObject(
             video_codec=VideoCodec.H264,
@@ -38,10 +43,13 @@ def MediaObjectsForURL(url):
 
 def PlayVideo(url):
 
-    video_hash = url.rsplit('/')[0]
+    log('PlayVideo('+url+')')
+
+    video_hash = url.split('/')[-1]
     smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
     video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
     mp4 = video_details.get('src')
+    log("Playing MP4: " + mp4)
 
     return Redirect(mp4)
