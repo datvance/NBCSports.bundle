@@ -67,10 +67,16 @@ def ChannelVideoCategory(id, name):
     page = HTML.ElementFromURL(VIDEOS_URL)
 
     thumbs = page.xpath('//div[@id = "channel-' + id + '"]//img/@src')
-    titles = page.xpath('//div[@id = "channel-' + id + '"]//div[@class = "views-field-title"]//a/text()')
-    log("Thumbs: %d, Titles: %d" % (len(thumbs), len(titles)))
+    titles = page.xpath('//div[@id = "channel-' + id + '"]//div[contains(@class, "views-field-title")]//a/text()')
 
-    for index in range(len(thumbs)):
+    num_thumbs = len(thumbs)
+    num_titles = len(titles)
+    log("Thumbs: %d, Titles: %d" % (num_thumbs, num_titles))
+
+    if num_thumbs < 1 or num_titles < 1 or num_thumbs != num_titles:
+        return ObjectContainer(header=name, message="D'oh! Me Fail Videos? Unpossible!.")
+
+    for index in range(num_thumbs):
         name = titles[index]
         thumb = thumbs[index]
         video_hash = thumb.replace(THUMB_URL, '').split('.', 1)[0]
