@@ -1,7 +1,7 @@
 DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
-PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
-THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/"
+PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/%"
+THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
 SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
 SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
 
@@ -13,6 +13,7 @@ ICON = 'icon-default.png'
 
 DEFAULT_LOGO = 'simpsons.jpg'
 LOGOS = {'college-football': True, 'f1': True, 'mlb': True, 'mls': True, 'nba': True, 'nhl': True, 'nfl': True, 'premier-league': True}
+
 
 ####################################################################################################
 def Start():
@@ -32,6 +33,7 @@ def Start():
     if not DEBUG:
         HTTP.CacheTime = CACHE_1HOUR
     HTTP.Headers['User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
+
 
 ####################################################################################################
 @handler('/video/nbcsports', L('VideoTitle'))
@@ -56,7 +58,12 @@ def MainMenu():
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
 
-            oc.add(DirectoryObject(key=Callback(ChannelVideoCategory, id=cat_id, name=CleanName(name)), title=name, thumb=logo))
+            oc.add(DirectoryObject(
+                key=Callback(ChannelVideoCategory,
+                id=cat_id,
+                name=CleanName(name)),
+                title=name,
+                thumb=logo))
 
     return oc
 
@@ -87,11 +94,13 @@ def ChannelVideoCategory(id, name):
 
         log("Hash: %s, Title: %s" % (video_hash, name))
 
+        url = PLAYER_URL + video_hash
+
         # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
         smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
         video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-        url = video_details.get('src')
+        #mp4_url = video_details.get('src')
         summary = video_details.get('abstract')
         duration = int(video_details.get('dur').strip('ms'))
 
@@ -101,7 +110,7 @@ def ChannelVideoCategory(id, name):
             tags = []
 
         oc.add(VideoClipObject(
-            #url=url,
+            url=url,
             title=CleanName(name),
             thumb=thumb,
             summary=summary,

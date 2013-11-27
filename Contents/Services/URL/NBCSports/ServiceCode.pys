@@ -1,0 +1,47 @@
+####################################################################################################
+def MetadataObjectForURL(url):
+    video_hash = url.rsplit('/')[0]
+
+    # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    summary = video_details.get('abstract')
+    duration = int(video_details.get('dur').strip('ms'))
+    thumb = THUMB_URL % video_hash
+
+    try:
+        tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
+    except:
+        tags = []
+
+    return VideoClipObject(
+        title=title,
+        summary=summary,
+        duration=duration,
+        thumb=thumb,
+        tags=tags
+    )
+
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            container='mp4',
+            parts=[PartObject(key=Callback(PlayVideo, url=url))])]
+
+
+def PlayVideo(url):
+
+    video_hash = url.rsplit('/')[0]
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    mp4 = video_details.get('src')
+
+    return Redirect(mp4)
