@@ -12,11 +12,11 @@ ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 
 DEFAULT_LOGO = 'simpsons.jpg'
-LOGOS = {'college-football': True, 'f1': True, 'mlb': True, 'mls': True, 'nba': True, 'nhl': True, 'nfl': True, 'premier-league': True}
+LOGOS = {'college-football': True, 'f1': True, 'mlb': True, 'mls': True, 'nba': True, 'nhl': True, 'nfl': True,
+         'premier-league': True}
 
 ####################################################################################################
 def Start():
-
     Plugin.AddViewGroup("InfoList", viewMode="InfoList", mediaType="items")
     Plugin.AddViewGroup("List", viewMode="List", mediaType="items")
 
@@ -31,12 +31,12 @@ def Start():
     # Set the default cache time
     if not DEBUG:
         HTTP.CacheTime = CACHE_1HOUR
-    HTTP.Headers['User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
+    HTTP.Headers[
+        'User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"
 
 ####################################################################################################
 @handler('/video/nbcsports', L('VideoTitle'))
 def MainMenu():
-
     oc = ObjectContainer()
 
     # Iterate over all of the available categories and display them to the user.
@@ -56,14 +56,14 @@ def MainMenu():
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
 
-            oc.add(DirectoryObject(key=Callback(ChannelVideoCategory, id=cat_id, name=CleanName(name)), title=name, thumb=logo))
+            oc.add(DirectoryObject(key=Callback(ChannelVideoCategory, id=cat_id, name=CleanName(name)), title=name,
+                                   thumb=logo))
 
     return oc
 
 ####################################################################################################
 @route('/video/nbcsports/{id}')
 def ChannelVideoCategory(id, name):
-
     oc = ObjectContainer(view_group="InfoList")
 
     page = HTML.ElementFromURL(VIDEOS_URL)
@@ -87,27 +87,29 @@ def ChannelVideoCategory(id, name):
 
         log("Hash: %s, Title: %s" % (video_hash, name))
 
+        #url = PLAYER_URL + video_hash
         # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
         smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
         video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-        url = video_details.get('src')
+        mp4 = video_details.get('src')
         summary = video_details.get('abstract')
         duration = int(video_details.get('dur').strip('ms'))
+        title = CleanName(name)
 
         try:
             tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
         except:
             tags = []
 
-        oc.add(VideoClipObject(
-            #url=url,
-            title=CleanName(name),
-            thumb=thumb,
+        oc.add(createVideoClipObject(
+            url=mp4,
+            title=title,
             summary=summary,
+            thumb=thumb,
+            rating_key=video_hash,
             duration=duration,
-            tags=tags
-        ))
+            tags=tags))
 
     # It's possible that there is actually no vidoes are available for the ipad. Unfortunately, they
     # still provide us with empty containers...
@@ -118,6 +120,49 @@ def ChannelVideoCategory(id, name):
 
 
 ####################################################################################################
+def createVideoClipObject(url, title, summary, thumb, rating_key, duration=None, tags=None, include_container=False):
+    container = Container.MP4
+    video_codec = VideoCodec.H264
+    audio_codec = AudioCodec.AAC
+    audio_channels = 2
+
+    video_object = VideoClipObject(
+        key=Callback(
+            createVideoClipObject,
+            url=url,
+            title=title,
+            summary=summary,
+            thumb=thumb,
+            rating_key=rating_key,
+            duration=duration,
+            tags=tags,
+            include_container=True
+        ),
+        rating_key=rating_key,
+        title=title,
+        summary=summary,
+        tags=tags,
+        thumb=thumb,
+        duration=duration,
+        items=[
+            MediaObject(
+                parts=[
+                    PartObject(key=url)
+                ],
+                container=container,
+                video_codec=video_codec,
+                audio_codec=audio_codec,
+                audio_channels=audio_channels,
+            )
+        ]
+    )
+
+    if include_container:
+        return ObjectContainer(objects=[video_object])
+    else:
+        return video_object
+
+####################################################################################################
 def CleanName(name):
     # Function cleans up HTML ascii stuff
     remove = [('&amp;', '&'), ('&quot;', '"'), ('&#233;', 'e'), ('&#8212;', ' - '), ('&#39;', '\''), ('&#46;', '.'),
@@ -126,6 +171,7 @@ def CleanName(name):
         name = name.replace(trash, crap)
 
     return name.strip()
+
 
 def log(str):
     if DEBUG:
