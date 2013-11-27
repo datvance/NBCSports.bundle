@@ -39,7 +39,7 @@ def MainMenu():
 
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
-    categories = page.xpath('//ul[@class = "video-category-nav"]/li/a')
+    categories = page.xpath('//div[@class = "video-categories"]//li/a')
     log("Categoreies" + len(categories))
 
     for category in categories:
