@@ -68,7 +68,7 @@ def ChannelVideoCategory(id, name):
 
     thumbs = page.xpath('//div[@id = "channel-' + id + '"]//img/@src')
     titles = page.xpath('//div[@id = "channel-' + id + '"]//div[@class = "views-field-title"]//a/text()')
-    log("Thumbs: %d, Titles: %d", (len(thumbs), len(titles)))
+    log("Thumbs: %d, Titles: %d" % (len(thumbs), len(titles)))
 
     for index in range(len(thumbs)):
         name = titles[index]
