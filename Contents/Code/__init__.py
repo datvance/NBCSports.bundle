@@ -87,7 +87,8 @@ def ChannelVideoCategory(id, name):
         video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
         url = video_details.get('src')
         summary = video_details.get('abstract')
-        duration = int(video_details.get('duration').strip('ms'))
+        duration = int(video_details.get('dur').strip('ms'))
+
         try:
             tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
         except:
