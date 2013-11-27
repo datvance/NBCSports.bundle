@@ -1,6 +1,6 @@
 DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
-PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/%"
+PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
 THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
 SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
 SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
