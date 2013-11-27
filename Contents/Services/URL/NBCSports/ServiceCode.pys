@@ -1,7 +1,11 @@
+SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
+SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
+THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
+
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    log('MetadataObjectForURL('+url+')')
+    Log.Debug('MetadataObjectForURL('+url+')')
 
     video_hash = url.split('/')[-1]
 
@@ -30,7 +34,7 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    log('MediaObjectsForURL('+url+')')
+    Log.Debug('MediaObjectsForURL('+url+')')
 
     return [
         MediaObject(
@@ -43,13 +47,13 @@ def MediaObjectsForURL(url):
 
 def PlayVideo(url):
 
-    log('PlayVideo('+url+')')
+    Log.Debug('PlayVideo('+url+')')
 
     video_hash = url.split('/')[-1]
     smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
     video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
     mp4 = video_details.get('src')
-    log("Playing MP4: " + mp4)
+    Log.Debug("Playing MP4: " + mp4)
 
     return Redirect(mp4)
