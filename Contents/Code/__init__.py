@@ -52,9 +52,9 @@ def MainMenu():
             logo = name.lower().replace(' ', '-')
 
             logo = R(logo + '.jpg')
-            log(logo)
+            log("Logo: " + logo)
 
-            if not logo:
+            if logo is None:
                 logo = R(ICON)
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
