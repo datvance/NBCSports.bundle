@@ -1,4 +1,4 @@
-DEBUG = False
+DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
 PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
 THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
@@ -26,7 +26,7 @@ def Start():
     ObjectContainer.art = R(ART)
     ObjectContainer.view_group = "List"
 
-    DirectoryObject.thumb = R(DEFAULT_LOGO)
+    DirectoryObject.thumb = R(ICON)
     VideoClipObject.thumb = R(ICON)
 
     # Set the default cache time
