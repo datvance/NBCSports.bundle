@@ -11,7 +11,6 @@ NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 
-DEFAULT_LOGO = 'simpsons.jpg'
 LOGOS = {'college-football': True, 'f1': True, 'mlb': True, 'mls': True, 'nba': True, 'nhl': True, 'nfl': True, 'premier-league': True}
 
 
@@ -53,7 +52,7 @@ def MainMenu():
             if logo in LOGOS:
                 logo = R(logo + '.jpg')
             else:
-                logo = R(DEFAULT_LOGO)
+                logo = R(ICON)
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
 
