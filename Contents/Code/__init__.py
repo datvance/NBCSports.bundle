@@ -11,7 +11,8 @@ NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 
-LOGOS = {'college-football': True, 'f1': True, 'mlb': True, 'mls': True, 'nba': True, 'nhl': True, 'nfl': True, 'premier-league': True}
+LOGOS = {'boxing': True, 'college-football': True, 'f1': True, 'golf': True, 'mlb': True, 'mls': True,
+         'nba': True, 'nhl': True, 'nfl': True, 'outdoors': True, 'premier-league': True, 'tennis': True}
 
 
 ####################################################################################################
@@ -49,9 +50,11 @@ def MainMenu():
         if cat_id.isdigit():
             name = category.text
             logo = name.lower().replace(' ', '-')
-            if logo in LOGOS:
-                logo = R(logo + '.jpg')
-            else:
+
+            logo = R(logo + '.jpg')
+            log(logo)
+
+            if not logo:
                 logo = R(ICON)
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
