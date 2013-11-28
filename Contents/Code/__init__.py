@@ -43,17 +43,17 @@ def MainMenu():
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
     categories = page.xpath('//div[@class = "video-categories"]//li/a')
-    log("Categoreies: %d" % len(categories))
+    log("Categories: %d" % len(categories))
 
     for category in categories:
         cat_id = category.get('href').replace('/video/', '')
         if cat_id.isdigit():
             name = category.text
+            title = CleanName(name)
             logo = name.lower().replace(' ', '-')
-
             logo = R(logo + '.jpg')
-
-            if logo == None:
+            # this doesn't work and 2 hours of slinging crap leaves me no closer to knowing what does
+            if not logo:
                 logo = R(ICON)
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
@@ -61,8 +61,8 @@ def MainMenu():
             oc.add(DirectoryObject(
                 key=Callback(ChannelVideoCategory,
                 id=cat_id,
-                name=CleanName(name)),
-                title=name,
+                name=title),
+                title=title,
                 thumb=logo))
 
     return oc
