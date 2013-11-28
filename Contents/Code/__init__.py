@@ -53,7 +53,7 @@ def MainMenu():
 
             logo = R(logo + '.jpg')
 
-            if logo is None:
+            if logo == None:
                 logo = R(ICON)
 
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
