@@ -52,7 +52,6 @@ def MainMenu():
             logo = name.lower().replace(' ', '-')
 
             logo = R(logo + '.jpg')
-            log("Logo: " + logo)
 
             if logo is None:
                 logo = R(ICON)
