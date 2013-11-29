@@ -67,6 +67,7 @@ def MainMenu():
 
     return oc
 
+
 ####################################################################################################
 @route('/video/nbcsports/{id}')
 def ChannelVideoCategory(id, name):
@@ -94,65 +95,35 @@ def ChannelVideoCategory(id, name):
 
         log("Hash: %s, Title: %s" % (video_hash, name))
 
-        url = PLAYER_URL + video_hash
+        oc.add(CreateVideoObject(video_hash=video_hash))
 
-        # Depending on parameters to SMIL_URL, could be different format, but we'll go with this
-        smil = XML.ElementFromURL(SMIL_URL % video_hash)
-
-        video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-        #mp4_url = video_details.get('src')
-        summary = video_details.get('abstract')
-        duration = int(video_details.get('dur').strip('ms'))
-
-        try:
-            tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
-        except:
-            tags = []
-
-        oc.add(CreateVideoObject(
-            url=url,
-            title=CleanName(name),
-            summary=summary,
-            thumb=thumb,
-            duration=duration,
-            tags=tags))
-
-    # It's possible that there is actually no vidoes are available for the ipad. Unfortunately, they
-    # still provide us with empty containers...
     if len(oc) < 1:
         return ObjectContainer(header=name, message="There are no titles available for the requested item.")
 
     return oc
 
 
-def CreateVideoObject(url, title, summary, thumb, duration, tags, include_container=False):
+####################################################################################################
+# https://forums.plexapp.com/index.php/topic/78852-can-i-directly-play-an-url-without-having-a-service-file/
+####################################################################################################
+def CreateVideoObject(video_hash, include_container=False):
 
-    video_hash = url.split('/')[-1]
-    smil = XML.ElementFromURL(SMIL_URL % video_hash)
-
-    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-    mp4 = video_details.get('src')
-    log("mp4: " + mp4)
+    video_details = GetVideoDetails(video_hash)
 
     video_object = VideoClipObject(
         key=Callback(CreateVideoObject,
-                        url=url,
-                        title=title,
-                        summary=summary,
-                        thumb=thumb,
-                        duration=duration,
-                        tags=tags,
+                        video_hash=video_hash,
                         include_container=True),
-        rating_key=url,
-        title=title,
-        summary=summary,
-        tags=tags,
-        duration=duration,
-        thumb=thumb,
+        rating_key=video_details['url'],
+        title=video_details['title'],
+        summary=video_details['summary'],
+        tags=video_details['tags'],
+        duration=video_details['duration'],
+        thumb=video_details['thumb'],
         items=[
                 MediaObject(
                         parts = [
-                                PartObject(key=mp4, duration=duration)
+                                PartObject(key=video_details['src'], duration=video_details['duration'])
                         ],
                         container=Container.MP4,
                         audio_codec=AudioCodec.AAC,
@@ -165,6 +136,34 @@ def CreateVideoObject(url, title, summary, thumb, duration, tags, include_contai
             return ObjectContainer(objects=[video_object])
     else:
             return video_object
+
+
+####################################################################################################
+def GetVideoDetails(video_hash):
+
+    log("GetVideoDetails(" + video_hash + ")")
+
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    summary = video_details.get('abstract')
+    duration = int(video_details.get('dur').strip('ms'))
+    src = video_details.get('src')
+    title = video_details.get('title')
+    try:
+        tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
+    except:
+        tags = []
+
+    thumb = THUMB_URL % video_hash
+    url = PLAYER_URL + video_hash
+
+    details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
+               'url': url}
+
+    log(str(details))
+
+    return details
 
 
 ####################################################################################################
