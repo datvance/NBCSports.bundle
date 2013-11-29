@@ -11,9 +11,6 @@ NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 
-LOGOS = {'boxing': True, 'college-football': True, 'f1': True, 'golf': True, 'mlb': True, 'mls': True,
-         'nba': True, 'nhl': True, 'nfl': True, 'outdoors': True, 'premier-league': True, 'tennis': True}
-
 
 ####################################################################################################
 def Start():
