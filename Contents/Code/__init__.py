@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
 PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
 THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
@@ -143,23 +143,29 @@ def GetVideoDetails(video_hash):
 
     log("GetVideoDetails(" + video_hash + ")")
 
-    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+    if Data.Exists(video_hash):
+        log("Details for %s from cache" % video_hash)
+        details = Data.LoadObject(video_hash)
+    else:
+        smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
-    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-    summary = video_details.get('abstract')
-    duration = int(video_details.get('dur').strip('ms'))
-    src = video_details.get('src')
-    title = video_details.get('title')
-    try:
-        tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
-    except:
-        tags = []
+        video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+        summary = video_details.get('abstract')
+        duration = int(video_details.get('dur').strip('ms'))
+        src = video_details.get('src')
+        title = video_details.get('title')
+        try:
+            tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
+        except:
+            tags = []
 
-    thumb = THUMB_URL % video_hash
-    url = PLAYER_URL + video_hash
+        thumb = THUMB_URL % video_hash
+        url = PLAYER_URL + video_hash
 
-    details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
-               'url': url}
+        details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
+                   'url': url}
+
+        Data.SaveObject(video_hash, details)
 
     log(str(details))
 
