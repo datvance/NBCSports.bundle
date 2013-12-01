@@ -56,7 +56,7 @@ def MainMenu():
             log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
 
             oc.add(DirectoryObject(
-                key=Callback(ChannelVideoCategory,
+                key=Callback(ListVideos,
                 id=cat_id,
                 name=title),
                 title=title,
@@ -66,8 +66,8 @@ def MainMenu():
 
 
 ####################################################################################################
-@route('/video/nbcsports/{id}')
-def ChannelVideoCategory(id, name):
+@route('/video/nbcsports/listvideos')
+def ListVideos(id, name):
 
     oc = ObjectContainer(view_group="InfoList")
 
@@ -92,7 +92,7 @@ def ChannelVideoCategory(id, name):
 
         log("Hash: %s, Title: %s" % (video_hash, name))
 
-        oc.add(CreateVideoObject(video_hash=video_hash))
+        oc.add(VideoInfo(video_hash=video_hash))
 
     if len(oc) < 1:
         return ObjectContainer(header=name, message="There are no titles available for the requested item.")
@@ -103,12 +103,13 @@ def ChannelVideoCategory(id, name):
 ####################################################################################################
 # https://forums.plexapp.com/index.php/topic/78852-can-i-directly-play-an-url-without-having-a-service-file/
 ####################################################################################################
-def CreateVideoObject(video_hash, include_container=False):
+@route('/video/nbcsports/videoinfo')
+def VideoInfo(video_hash, include_container=False):
 
     video_details = GetVideoDetails(video_hash)
 
     video_object = VideoClipObject(
-        key=Callback(CreateVideoObject,
+        key=Callback(VideoInfo,
                         video_hash=video_hash,
                         include_container=True),
         rating_key=video_details['url'],
