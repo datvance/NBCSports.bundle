@@ -1,0 +1,31 @@
+SEARCH_URL = "http://www.nbcsports.com/search/site/%s?f[0]=bundle%%3Avideo_content_type"
+
+
+def Search(query):
+    Log(query)
+    #oc = ObjectContainer(title1='NBCSports', title2='Search Results')
+    # the auto-complete in Roku adds the date, but Wimp will not search with the date included so we remove it
+    if ' - ' in query:
+        query = query.split(' - ')[1]
+    url = SEARCH_URL % String.Quote(query, usePlus=False)
+    data = HTML.ElementFromURL(url)
+
+    i = 1
+    for video in data.xpath('//li[@class="search-result"]/h3/a'):
+        i += 1
+        title = video.text
+        page = video.get('href')
+        Log("%s | %s" % (title, page))
+        #oc.add(DirectoryObject(key=Callback(ListVideos, name=title), title=title, thumb=R('icon-default.jpg')))
+
+    oc = ObjectContainer(title1='NBCSports'+str(i), title2='Search Results')
+
+    if len(oc) < 1:
+        Log ('nbcsports.com search query returned no results')
+        return ObjectContainer(header="Empty", message="There are "+str(i)+" videos results to list right now.")
+    else:
+        return oc
+
+
+def ListVideos(name):
+    return
