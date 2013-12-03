@@ -1,11 +1,5 @@
-DEBUG = False
+DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
-PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
-THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
-SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
-SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
-
-RE_VIDEO_HASH = Regex("media-theplatform/(.+?)\.jpg")
 
 NAME = L('Title')
 ART = 'art-default.jpg'
@@ -69,110 +63,33 @@ def MainMenu():
 @route('/video/nbcsports/listvideos')
 def ListVideos(id, name):
 
-    oc = ObjectContainer(view_group="InfoList")
+    oc = ObjectContainer(view_group="InfoList", title1=name)
 
     page = HTML.ElementFromURL(VIDEOS_URL)
 
     thumbs = page.xpath('//div[@id = "channel-' + id + '"]//img/@src')
-    titles = page.xpath('//div[@id = "channel-' + id + '"]//div[contains(@class, "views-field-title")]//a/text()')
+    links = page.xpath('//div[@id = "channel-' + id + '"]//div[contains(@class, "views-field-title")]//a')
 
     num_thumbs = len(thumbs)
-    num_titles = len(titles)
-    log("Thumbs: %d, Titles: %d" % (num_thumbs, num_titles))
+    num_links = len(links)
+    log("Thumbs: %d, Links: %d" % (num_thumbs, num_links))
 
-    if num_thumbs < 1 or num_titles < 1 or num_thumbs != num_titles:
+    if num_thumbs < 1 or num_links < 1 or num_thumbs != num_links:
         return ObjectContainer(header=name, message="D'oh! Me Fail Videos? Unpossible!.")
 
     for index in range(num_thumbs):
-        name = titles[index]
+        url = 'http://www.nbcsports.com' + links[index].get('href')
+        title = CleanName(links[index].text)
         thumb = thumbs[index]
-        video_hash = RE_VIDEO_HASH.search(thumb).group(1)
-        if not video_hash:
-            continue
 
-        log("Hash: %s, Title: %s" % (video_hash, name))
-
-        oc.add(VideoInfo(video_hash=video_hash))
-
-    if len(oc) < 1:
-        return ObjectContainer(header=name, message="There are no titles available for the requested item.")
+        oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
 
     return oc
 
 
 ####################################################################################################
-# https://forums.plexapp.com/index.php/topic/78852-can-i-directly-play-an-url-without-having-a-service-file/
-####################################################################################################
-@route('/video/nbcsports/videoinfo')
-def VideoInfo(video_hash, include_container=False):
-
-    video_details = GetVideoDetails(video_hash)
-
-    video_object = VideoClipObject(
-        key=Callback(VideoInfo,
-                        video_hash=video_hash,
-                        include_container=True),
-        rating_key=video_details['url'],
-        title=video_details['title'],
-        summary=video_details['summary'],
-        tags=video_details['tags'],
-        duration=video_details['duration'],
-        thumb=video_details['thumb'],
-        items=[
-                MediaObject(
-                        parts = [
-                                PartObject(key=video_details['src'], duration=video_details['duration'])
-                        ],
-                        container=Container.MP4,
-                        audio_codec=AudioCodec.AAC,
-                        audio_channels=2
-                )
-        ]
-    )
-
-    if include_container:
-            return ObjectContainer(objects=[video_object])
-    else:
-            return video_object
-
-
-####################################################################################################
-def GetVideoDetails(video_hash):
-
-    log("GetVideoDetails(" + video_hash + ")")
-
-    if Data.Exists(video_hash):
-        log("Details for %s from cache" % video_hash)
-        details = Data.LoadObject(video_hash)
-    else:
-        smil = XML.ElementFromURL(SMIL_URL % video_hash)
-
-        video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-        summary = video_details.get('abstract')
-        duration = int(video_details.get('dur').strip('ms'))
-        src = video_details.get('src')
-        title = video_details.get('title')
-        try:
-            tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
-        except:
-            tags = []
-
-        thumb = THUMB_URL % video_hash
-        url = PLAYER_URL + video_hash
-
-        details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
-                   'url': url}
-
-        Data.SaveObject(video_hash, details)
-
-    log(str(details))
-
-    return details
-
-
-####################################################################################################
 def CleanName(name):
-    # Function cleans up HTML ascii stuff
+    # Function cleans up HTML entities
     remove = [('&amp;', '&'), ('&quot;', '"'), ('&#233;', 'e'), ('&#8212;', ' - '), ('&#39;', '\''), ('&#46;', '.'),
               ('&#58;', ':'), ('&#8482;', '')]
     for trash, crap in remove:
@@ -180,6 +97,7 @@ def CleanName(name):
 
     return name.strip()
 
+
 def log(str):
     if DEBUG:
-        Log(str)
+        Log.Debug(str)
