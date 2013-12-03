@@ -56,6 +56,8 @@ def MainMenu():
                 title=title,
                 thumb=logo))
 
+    oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
+
     return oc
 
 
