@@ -1,0 +1,89 @@
+PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
+THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
+SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
+SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
+
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    Log.Debug('MetadataObjectForURL('+url+')')
+
+    if url.startswith("http://www.nbcsports.com"):
+
+        video_hash = GetVideoHash(url)
+        video_details = GetVideoDetails(video_hash)
+
+        return VideoClipObject(
+                title=video_details['title'],
+                summary=video_details['summary'],
+                thumb=video_details['thumb'],
+                tags=video_details['tags'],
+                duration=video_details['duration']
+        )
+
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    Log.Debug('MediaObjectsForURL('+url+')')
+
+    if url.startswith("http://www.nbcsports.com"):
+
+        return [
+                MediaObject(
+                        container=Container.MP4,
+                        video_codec=VideoCodec.H264,
+                        audio_codec=AudioCodec.AAC,
+                        audio_channels=2,
+                        parts=[PartObject(key=Callback(PlayVideo, url=url))]
+                )
+        ]
+
+
+####################################################################################################
+def PlayVideo(url):
+
+    video_hash = GetVideoHash(url)
+    video_details = GetVideoDetails(video_hash)
+    return Redirect(video_details['src'])
+
+
+####################################################################################################
+def GetVideoHash(url):
+
+    Log.Debug("GetVideoHash(" + url + ")")
+
+    html = HTML.ElementFromURL(url)
+
+    iframe = html.xpath('//div[@id="video-player-player"]//iframe')[0]
+    player_url = iframe.get('src').split('?')[0]
+    return player_url.replace(PLAYER_URL, '')
+
+
+####################################################################################################
+def GetVideoDetails(video_hash):
+
+    Log.Debug("GetVideoDetails(" + video_hash + ")")
+
+    smil = XML.ElementFromURL(SMIL_URL % video_hash)
+
+    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
+    summary = video_details.get('abstract')
+    duration = int(video_details.get('dur').strip('ms'))
+    src = video_details.get('src')
+    title = video_details.get('title')
+    try:
+        tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
+    except:
+        tags = []
+
+    thumb = THUMB_URL % video_hash
+    url = PLAYER_URL + video_hash
+
+    details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
+               'url': url}
+
+    Log.Debug(str(details))
+
+    return details

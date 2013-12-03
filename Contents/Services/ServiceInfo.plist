@@ -2,10 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-        <key>Search</key>
+        <key>URL</key>
         <dict>
                 <key>NBCSports</key>
-                <dict/>
+                <dict>
+                        <key>Identifier</key>
+                        <string>com.plexapp.plugins.nbcsports</string>
+                        <key>URLPatterns</key>
+                        <array>
+                                <string>http://www.nbcsports.com/.+</string>
+                        </array>
+                </dict>
         </dict>
 </dict>
 </plist>
