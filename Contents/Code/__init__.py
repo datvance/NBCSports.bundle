@@ -1,5 +1,6 @@
 DEBUG = True
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
+ALL_URL = "http://www.nbcsports.com/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
 
 NAME = L('Title')
 ART = 'art-default.jpg'
@@ -56,6 +57,7 @@ def MainMenu():
                 title=title,
                 thumb=logo))
 
+    oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos')))
     oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
 
     return oc
@@ -87,6 +89,30 @@ def ListVideos(id, name):
         oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
 
     return oc
+
+
+####################################################################################################
+def AllVideos(page=0):
+
+    oc = ObjectContainer(title2='Page '+str(page+1))
+
+    url = ALL_URL % page
+    data = HTML.ElementFromURL(url)
+
+    for video in data.xpath('//li[@class="search-result"]/h3/a'):
+        title = video.text
+        link = video.get('href')
+        Log("%s | %s" % (title, link))
+        oc.add(VideoClipObject(url=link, title=title))
+
+    if len(data.xpath('//li[contains(@class,"pager-next")]/a')) > 0:
+        oc.add(NextPageObject(key=Callback(AllVideos, page=page+1), title="More Videos..."))
+
+    if len(oc) < 1:
+        Log ('nbcsports.com search query returned no results')
+        return ObjectContainer(header="Empty", message="There are no videos results to list right now.")
+    else:
+        return oc
 
 
 ####################################################################################################
