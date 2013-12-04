@@ -1,11 +1,13 @@
-DEBUG = True
+DEBUG = False
 VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
 ALL_URL = "http://www.nbcsports.com/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
 
 NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+PREFIX = '/video/nbcsports'
 
+SHOWS = ['Dan Patrick Show', 'ProFootballTalk', 'SportsDash']
 
 ####################################################################################################
 def Start():
@@ -27,7 +29,7 @@ def Start():
 
 
 ####################################################################################################
-@handler('/video/nbcsports', L('VideoTitle'))
+@handler(PREFIX, L('VideoTitle'))
 def MainMenu():
 
     oc = ObjectContainer()
@@ -57,14 +59,18 @@ def MainMenu():
                 title=title,
                 thumb=logo))
 
-    oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos')))
+    for show in SHOWS:
+        thumb = R(show.lower().replace(' ', '-') + '.jpg')
+        oc.add(DirectoryObject(key=Callback(ListShow, show=show), title=L(show), thumb=thumb))
+
+    oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos'), thumb=R('icon-dark.jpg')))
     oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
 
     return oc
 
 
 ####################################################################################################
-@route('/video/nbcsports/listvideos')
+@route(PREFIX + '/listvideos')
 def ListVideos(id, name):
 
     oc = ObjectContainer(view_group="InfoList", title1=name)
@@ -87,6 +93,38 @@ def ListVideos(id, name):
         thumb = thumbs[index]
 
         oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
+
+    return oc
+
+
+####################################################################################################
+@route(PREFIX + '/listshow')
+def ListShow(show):
+
+    log("ListShow("+show+")")
+
+    if show == 'ProFootballTalk':
+        search = 'ProFootballTalk'
+    elif show == 'Dan Patrick Show':
+        search = 'DPS:'
+    elif show == 'SportsDash':
+        search = show
+
+    oc = ObjectContainer(view_group="InfoList", title1=show)
+
+    page = HTML.ElementFromURL(VIDEOS_URL)
+
+    rows = page.xpath('//li[contains(@class, "views-row")]')
+    log("Found %d rows" % len(rows))
+    for row in rows:
+        link = row.xpath('.//a[contains(text(), "' + search + '")]')
+        log("Found %d link" % len(link))
+        if len(link) == 1:
+            title = link[0].text
+            url = 'http://www.nbcsports.com' + link[0].get('href')
+            thumb = row.xpath('.//img/@src')[0]
+
+            oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
 
     return oc
 
