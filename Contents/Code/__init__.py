@@ -1,13 +1,17 @@
-DEBUG = False
-VIDEOS_URL = "http://www.nbcsports.com/ajax-pane/get-pane/3373/61644?/video"
-ALL_URL = "http://www.nbcsports.com/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
+import datetime
+common = SharedCodeService.common
+
+NBC_URL = "http://www.nbcsports.com"
+VIDEOS_URL = NBC_URL + "/video"
+ALL_URL = NBC_URL + "/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
 
 NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 PREFIX = '/video/nbcsports'
 
-SHOWS = ['Dan Patrick Show', 'ProFootballTalk', 'SportsDash']
+DATE_RE = Regex('\/public\/(\d{4})\/(\d{1,2})\/(\d{1,2})/')
+
 
 ####################################################################################################
 def Start():
@@ -36,95 +40,84 @@ def MainMenu():
 
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
-    categories = page.xpath('//div[@class = "video-categories"]//li/a')
-    log("Categories: %d" % len(categories))
+    categories = page.xpath('//select[@title = "Browse channels"]/option')
+    if len(categories) > 0:
+        categories.pop(0)
+    common.log("Categories: %d" % len(categories))
 
     for category in categories:
-        cat_id = category.get('href').replace('/video/', '')
-        if cat_id.isdigit():
-            name = category.text
-            title = CleanName(name)
-            logo = name.lower().replace(' ', '-')
-            logo = R(logo + '.jpg')
-            # this doesn't work and 2 hours of slinging crap leaves me no closer to knowing what does
-            if not logo:
-                logo = R(ICON)
+        cat_uri = category.get('value').replace('/video/', '')
+        name = category.text
+        title = CleanName(name)
+        logo = name.lower().replace(' ', '-')
+        logo = R(logo + '.jpg')
+        # this doesn't work and 2 hours of slinging crap leaves me no closer to knowing what does
+        if logo is None:
+            logo = R(ICON)
 
-            log("Category: %s, Name: %s, Logo: %s" % (cat_id, name, logo))
+        common.log("Category: %s, Name: %s, Logo: %s" % (cat_uri, name, logo))
 
-            oc.add(DirectoryObject(
-                key=Callback(ListVideos,
-                id=cat_id,
-                name=title),
-                title=title,
-                thumb=logo))
+        oc.add(DirectoryObject(
+            key=Callback(ListVideos,
+            uri=cat_uri,
+            name=title),
+            title=title,
+            thumb=logo))
 
-    for show in SHOWS:
-        thumb = R(show.lower().replace(' ', '-') + '.jpg')
-        oc.add(DirectoryObject(key=Callback(ListShow, show=show), title=L(show), thumb=thumb))
-
-    oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos'), thumb=R('icon-dark.jpg')))
-    oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
+    #oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos'), thumb=R('icon-dark.jpg')))
+    #oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
 
     return oc
 
 
 ####################################################################################################
 @route(PREFIX + '/listvideos')
-def ListVideos(id, name):
+def ListVideos(uri, name, page=0):
+
+    page = int(page)
+
+    common.log("ListVideos(%s, %s, %d)" % (uri, name, page))
 
     oc = ObjectContainer(view_group="InfoList", title1=name)
 
-    page = HTML.ElementFromURL(VIDEOS_URL)
+    url = VIDEOS_URL + '/' + uri
+    if page > 0:
+        url += '?page=%d' % page
 
-    thumbs = page.xpath('//div[@id = "channel-' + id + '"]//img/@src')
-    links = page.xpath('//div[@id = "channel-' + id + '"]//div[contains(@class, "views-field-title")]//a')
+    html = HTML.ElementFromURL(url)
+
+    thumbs = html.xpath('//div[@class = "video-event-thumb__image"]//img/@src')
+    links = html.xpath('//div[@class = "video-event-thumb__image"]/a/@href')
+    titles = html.xpath('//span[@class = "video-event-thumb__event-name"]/text()')
 
     num_thumbs = len(thumbs)
     num_links = len(links)
-    log("Thumbs: %d, Links: %d" % (num_thumbs, num_links))
+    num_titles = len(titles)
+    common.log("Thumbs: %d, Links: %d, Titles: %d" % (num_thumbs, num_links, num_titles))
 
-    if num_thumbs < 1 or num_links < 1 or num_thumbs != num_links:
+    if num_thumbs < 1 or num_links < 1 or num_titles < 1 or num_thumbs != num_links:
         return ObjectContainer(header=name, message="D'oh! Me Fail Videos? Unpossible!.")
 
     for index in range(num_thumbs):
-        url = 'http://www.nbcsports.com' + links[index].get('href')
-        title = CleanName(links[index].text)
+        url = NBC_URL + links[index]
+        title = titles[index]
         thumb = thumbs[index]
 
-        oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
+        originally_available_at = None
 
-    return oc
+        result = DATE_RE.search(thumb)
+        if result is not None:
+            thumb_dates = result.groups()
+            if len(thumb_dates) == 3:
+                year = int(thumb_dates[0])
+                month = int(thumb_dates[1])
+                day = int(thumb_dates[2])
+                common.log("Date found: %s" % str(thumb_dates))
+                originally_available_at = datetime.date(year, month, day)
 
+        oc.add(VideoClipObject(url=url, title=title, thumb=thumb, originally_available_at=originally_available_at))
 
-####################################################################################################
-@route(PREFIX + '/listshow')
-def ListShow(show):
-
-    log("ListShow("+show+")")
-
-    if show == 'ProFootballTalk':
-        search = 'ProFootballTalk'
-    elif show == 'Dan Patrick Show':
-        search = 'DPS:'
-    elif show == 'SportsDash':
-        search = show
-
-    oc = ObjectContainer(view_group="InfoList", title1=show)
-
-    page = HTML.ElementFromURL(VIDEOS_URL)
-
-    rows = page.xpath('//li[contains(@class, "views-row")]')
-    log("Found %d rows" % len(rows))
-    for row in rows:
-        link = row.xpath('.//a[contains(text(), "' + search + '")]')
-        log("Found %d link" % len(link))
-        if len(link) == 1:
-            title = link[0].text
-            url = 'http://www.nbcsports.com' + link[0].get('href')
-            thumb = row.xpath('.//img/@src')[0]
-
-            oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
+    oc.add(NextPageObject(key=Callback(ListVideos, uri=uri, name=name, page=page + 1), title="More Videos..."))
 
     return oc
 
@@ -162,8 +155,3 @@ def CleanName(name):
         name = name.replace(trash, crap)
 
     return name.strip()
-
-
-def log(str):
-    if DEBUG:
-        Log.Debug(str)

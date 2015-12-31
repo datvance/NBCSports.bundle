@@ -1,0 +1,6 @@
+DEBUG = True
+
+
+def log(str):
+    if DEBUG:
+        Log.Debug(str)

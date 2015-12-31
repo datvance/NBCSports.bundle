@@ -1,89 +1,90 @@
-PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsportssite/select/"
-THUMB_URL = "http://www.nbcsports.com/files/nbcsports/styles/video_thumbnail/public/media-theplatform/%s.jpg"
-SMIL_URL = "http://link.theplatform.com/s/BxmELC/%s"
+import common
+
+PLAYER_URL = "http://vplayer.nbcsports.com/p/BxmELC/nbcsports/select/media/"
+SMIL_URL = "http://link.theplatform.com/s/BxmELC/media/%s?format=SMIL"
 SMIL_NAMESPACE = {'a': 'http://www.w3.org/2005/SMIL21/Language'}
 
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    Log.Debug('MetadataObjectForURL('+url+')')
+    common.log('MetadataObjectForURL(' + url + ')')
 
     if url.startswith("http://www.nbcsports.com"):
 
-        video_hash = GetVideoHash(url)
-        video_details = GetVideoDetails(video_hash)
+        video_details = GetVideoDetails(url)
 
-        return VideoClipObject(
-                title=video_details['title'],
-                summary=video_details['summary'],
-                thumb=video_details['thumb'],
-                tags=video_details['tags'],
-                duration=video_details['duration']
-        )
+        if len(video_details) > 0:
+
+            return VideoClipObject(
+                    title=video_details["title"],
+                    summary=video_details["summary"],
+                    thumb=video_details["thumb"],
+                    duration=video_details["duration"],
+                    originally_available_at=video_details["date"]
+            )
 
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    Log.Debug('MediaObjectsForURL('+url+')')
+    Log.Debug('MediaObjectsForURL(' + url + ')')
 
     if url.startswith("http://www.nbcsports.com"):
 
-        return [
+        video_details = GetVideoDetails(url)
+
+        if len(video_details) > 0:
+
+            return [
                 MediaObject(
-                        container=Container.MP4,
-                        video_codec=VideoCodec.H264,
-                        audio_codec=AudioCodec.AAC,
-                        audio_channels=2,
-                        parts=[PartObject(key=Callback(PlayVideo, url=url))]
+                    audio_channels=2,
+                    duration=video_details["duration"],
+                    optimized_for_streaming=True,
+                    parts=[PartObject(key=HTTPLiveStreamURL(url=video_details["src"]))]
                 )
-        ]
+            ]
 
 
 ####################################################################################################
-def PlayVideo(url):
+# gets the mediaID (i.e. video_hash)
+# parses the smil file for video details
+def GetVideoDetails(url):
 
-    video_hash = GetVideoHash(url)
-    video_details = GetVideoDetails(video_hash)
-    return Redirect(video_details['src'])
+    common.log("GetVideoDetails(" + url + ")")
 
-
-####################################################################################################
-def GetVideoHash(url):
-
-    Log.Debug("GetVideoHash(" + url + ")")
-
+    # get the mediaID (or video hash) from the page's iframe src attribute, so that we can get the smil file
     html = HTML.ElementFromURL(url)
-
-    iframe = html.xpath('//div[@id="video-player-player"]//iframe')[0]
-    player_url = iframe.get('src').split('?')[0]
-    return player_url.replace(PLAYER_URL, '')
-
-
-####################################################################################################
-def GetVideoDetails(video_hash):
-
-    Log.Debug("GetVideoDetails(" + video_hash + ")")
+    iframe_src = html.xpath('//iframe[@id="vod-player"]/@src')[0]
+    video_hash = iframe_src.replace(PLAYER_URL, '').split('?')[0]
+    common.log("video_hash: %s" % video_hash)
 
     smil = XML.ElementFromURL(SMIL_URL % video_hash)
 
-    video_details = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)[0]
-    summary = video_details.get('abstract')
-    duration = int(video_details.get('dur').strip('ms'))
-    src = video_details.get('src')
-    title = video_details.get('title')
-    try:
-        tags = [tag.strip() for tag in video_details.get('keywords').split(',')]
-    except:
-        tags = []
+    video_element = smil.xpath('//a:video', namespaces=SMIL_NAMESPACE)
+    common.log("video element length: %d" % len(video_element))
 
-    thumb = THUMB_URL % video_hash
-    url = PLAYER_URL + video_hash
+    if video_element is None or len(video_element) != 1:
+        return {}
 
-    details = {'duration': duration, 'src': src, 'summary': summary, 'tags': tags, 'thumb': thumb, 'title': title,
-               'url': url}
+    # get a thumbnail url from twitter meta tag
+    thumb = html.xpath('//meta[@name="twitter:image:src"]/@content')[0]
 
-    Log.Debug(str(details))
+    # get publish date
+    pub_time = html.xpath('//meta[@property="article:published_time"]/@content')[0]
+    pub_date = Datetime.ParseDate(pub_time).date()
+
+    video_info = video_element[0]
+
+    summary = video_info.get('abstract')
+    duration = int(video_info.get('dur').strip('ms'))
+    # src should be a m3u8 playlist
+    src = video_info.get('src')
+    title = video_info.get('title')
+
+    details = {'duration': duration, 'src': src, 'summary': summary, 'thumb': thumb, 'title': title, 'date': pub_date}
+
+    common.log(str(details))
 
     return details
+
