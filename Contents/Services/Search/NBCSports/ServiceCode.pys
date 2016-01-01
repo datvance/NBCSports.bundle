@@ -29,7 +29,7 @@ def Search(query, page=0):
 
     if len(oc) < 1:
         common.log ('nbcsports.com search query returned no results')
-        return ObjectContainer(header="Empty", message="There are no videos results to list right now.")
+        return ObjectContainer(header="Empty", message="There are no video results to list right now.")
     else:
         if page <= 5:
             next_page = page + 1
