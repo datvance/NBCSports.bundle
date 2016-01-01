@@ -1,4 +1,7 @@
-SEARCH_URL = "http://www.nbcsports.com/search/site/%s?f[0]=bundle%%3Avideo_content_type&page=%s"
+import common
+
+SEARCH_URL = "http://www.nbcsports.com/search?search_api_views_fulltext=%s&page=%d"
+
 
 ####################################################################################################
 # @see https://github.com/shopgirl284/Wimp.bundle/blob/master/Contents/Services/Search/Wimp/ServiceCode.pys
@@ -11,23 +14,25 @@ def Search(query, page=0):
         query = query.split(' - ')[1]
 
     page = int(page)
-    Log("page: %s, query: %s" % (page, query))
+    common.log("page: %s, query: %s" % (page, query))
 
     url = SEARCH_URL % (query, page)
     data = HTML.ElementFromURL(url)
 
-    for video in data.xpath('//li[@class="search-result"]/h3/a'):
-        title = video.text
-        link = video.get('href')
-        Log("%s | %s" % (title, link))
-        oc.add(VideoClipObject(url=link, title=title))
-
-    #if len(data.xpath('//li[contains(@class,"pager-next")]/a')) > 0:
-    #    next_page = page + 1
-    #    oc.add(NextPageObject(key=Callback(Search, page=next_page), title="Page %s" % next_page))
+    for item in data.xpath('//li[@class="teasers-list__item"]'):
+        url = item.xpath('./a/@href')[0]
+        if "/video/" in url:
+            thumb = item.xpath('./img/@src')[0]
+            title = item.xpath('./div[@class="story__text"]/text()')
+            common.log("%s | %s" % (title, url))
+            oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
 
     if len(oc) < 1:
-        Log ('nbcsports.com search query returned no results')
+        common.log ('nbcsports.com search query returned no results')
         return ObjectContainer(header="Empty", message="There are no videos results to list right now.")
     else:
+        if page <= 5:
+            next_page = page + 1
+            oc.add(NextPageObject(key=Callback(Search, query=query, page=next_page), title="Page %s" % next_page))
+
         return oc

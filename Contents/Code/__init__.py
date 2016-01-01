@@ -4,6 +4,7 @@ common = SharedCodeService.common
 NBC_URL = "http://www.nbcsports.com"
 VIDEOS_URL = NBC_URL + "/video"
 ALL_URL = NBC_URL + "/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
+LATEST_URL = NBC_URL + "/api/v1/video_queues"
 
 NAME = L('Title')
 ART = 'art-default.jpg'
@@ -38,6 +39,8 @@ def MainMenu():
 
     oc = ObjectContainer()
 
+    oc.add(DirectoryObject(key=Callback(LatestVideos), title="Latest Videos", thumb=R('latest-videos.jpg')))
+
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
     categories = page.xpath('//select[@title = "Browse channels"]/option')
@@ -52,7 +55,7 @@ def MainMenu():
         logo = name.lower().replace(' ', '-')
         logo = R(logo + '.jpg')
         # this doesn't work and 2 hours of slinging crap leaves me no closer to knowing what does
-        if logo is None:
+        if logo is None or logo == "":
             logo = R(ICON)
 
         common.log("Category: %s, Name: %s, Logo: %s" % (cat_uri, name, logo))
@@ -123,9 +126,43 @@ def ListVideos(uri, name, page=0):
 
 
 ####################################################################################################
+def LatestVideos():
+
+    oc = ObjectContainer(view_group="InfoList", title1="Latest Videos")
+
+    data = JSON.ObjectFromURL(LATEST_URL)
+
+    for tray_index in range(len(data['trays'])):
+
+        tray = data['trays'][tray_index]
+        oc.add(DirectoryObject(key=Callback(ListLatest, title=tray['trayTitle']),
+                               title=tray['trayTitle'],
+                               thumb=R("latest-videos.jpg")))
+
+    return oc
+
+
+####################################################################################################
+def ListLatest(title):
+
+    oc = ObjectContainer(title1=title)
+
+    data = JSON.ObjectFromURL(LATEST_URL)
+
+    for tray_index in range(len(data['trays'])):
+        tray = data['trays'][tray_index]
+        if tray['trayTitle'] == title:
+            for entry in tray['entries']:
+                url = NBC_URL + entry['nodeUrl']
+                oc.add(VideoClipObject(url=url, title=entry['title'], thumb=entry['plmedia$defaultThumbnailUrl']))
+
+    return oc
+
+
+####################################################################################################
 def AllVideos(page=0):
 
-    oc = ObjectContainer(title2='Page '+str(page+1))
+    oc = ObjectContainer(title2='Page ' + str(page + 1))
 
     url = ALL_URL % page
     data = HTML.ElementFromURL(url)
@@ -133,14 +170,14 @@ def AllVideos(page=0):
     for video in data.xpath('//li[@class="search-result"]/h3/a'):
         title = video.text
         link = video.get('href')
-        Log("%s | %s" % (title, link))
+        commong.log("%s | %s" % (title, link))
         oc.add(VideoClipObject(url=link, title=title))
 
     if len(data.xpath('//li[contains(@class,"pager-next")]/a')) > 0:
         oc.add(NextPageObject(key=Callback(AllVideos, page=page+1), title="More Videos..."))
 
     if len(oc) < 1:
-        Log ('nbcsports.com search query returned no results')
+        commong.log ('nbcsports.com search query returned no results')
         return ObjectContainer(header="Empty", message="There are no videos results to list right now.")
     else:
         return oc
