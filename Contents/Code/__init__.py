@@ -68,7 +68,7 @@ def MainMenu():
             thumb=logo))
 
     #oc.add(DirectoryObject(key=Callback(AllVideos), title=L('All Videos'), thumb=R('icon-dark.jpg')))
-    #oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
+    oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.nbcsports", title=L("Search NBCSports.com Videos"), prompt=L("Search for Videos")))
 
     return oc
 
