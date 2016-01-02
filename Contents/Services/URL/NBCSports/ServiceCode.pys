@@ -28,22 +28,32 @@ def MetadataObjectForURL(url):
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    Log.Debug('MediaObjectsForURL(' + url + ')')
+    common.log('MediaObjectsForURL(' + url + ')')
 
     if url.startswith("http://www.nbcsports.com"):
 
-        video_details = GetVideoDetails(url)
+        return [
+            MediaObject(
+                parts=[
+                    PartObject(
+                        key=HTTPLiveStreamURL(Callback(PlayVideo, url=url))
+                    )
+                ],
+                video_resolution='720',
+                aspect_ratio='1.78',
+                audio_channels=2,
+                optimized_for_streaming=True
+            )
+        ]
 
-        if len(video_details) > 0:
 
-            return [
-                MediaObject(
-                    audio_channels=2,
-                    duration=video_details["duration"],
-                    optimized_for_streaming=True,
-                    parts=[PartObject(key=HTTPLiveStreamURL(url=video_details["src"]))]
-                )
-            ]
+####################################################################################################
+@indirect
+def PlayVideo(url):
+
+    video_details = GetVideoDetails(url)
+
+    return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_details['src']))
 
 
 ####################################################################################################
