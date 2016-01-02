@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 NBC_URL = "http://www.nbcsports.com"
 
 
