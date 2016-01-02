@@ -1,6 +1,6 @@
 import common
 
-SEARCH_URL = "http://www.nbcsports.com/search?search_api_views_fulltext=%s&page=%d"
+SEARCH_URL = common.NBC_URL + "/search?search_api_views_fulltext=%s&page=%d"
 
 
 ####################################################################################################
@@ -19,11 +19,15 @@ def Search(query, page=0):
     url = SEARCH_URL % (query, page)
     data = HTML.ElementFromURL(url)
 
-    for item in data.xpath('//li[@class="teasers-list__item"]'):
-        url = item.xpath('./a/@href')[0]
+    items = data.xpath('//article')
+    common.log("search items: %d" % len(items))
+    for item in items:
+        url = item.xpath('.//a/@href')[0]
+        common.log("search url: %s" % url)
         if "/video/" in url:
-            thumb = item.xpath('./img/@src')[0]
-            title = item.xpath('./div[@class="story__text"]/text()')
+            url = common.NBC_URL + url
+            thumb = item.xpath('.//img/@src')[0]
+            title = item.xpath('.//div[@class="story__text"]/text()')[0]
             common.log("%s | %s" % (title, url))
             oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
 
@@ -31,8 +35,7 @@ def Search(query, page=0):
         common.log ('nbcsports.com search query returned no results')
         return ObjectContainer(header="Empty", message="There are no video results to list right now.")
     else:
-        if page <= 5:
-            next_page = page + 1
-            oc.add(NextPageObject(key=Callback(Search, query=query, page=next_page), title="Page %s" % next_page))
-
+        # if page <= 5:
+        #     next_page = page + 1
+        #     oc.add(NextPageObject(key=Callback(Search, query=query, page=next_page), title="Page %s" % next_page))
         return oc

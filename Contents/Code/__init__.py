@@ -1,10 +1,9 @@
 import datetime
 common = SharedCodeService.common
 
-NBC_URL = "http://www.nbcsports.com"
-VIDEOS_URL = NBC_URL + "/video"
-ALL_URL = NBC_URL + "/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
-LATEST_URL = NBC_URL + "/api/v1/video_queues"
+VIDEOS_URL = common.NBC_URL + "/video"
+ALL_URL = common.NBC_URL + "/search/site/video%%3A?f[0]=bundle%%3Avideo_content_type&page=%s"
+LATEST_URL = common.NBC_URL + "/api/v1/video_queues"
 
 NAME = L('Title')
 ART = 'art-default.jpg'
@@ -102,7 +101,7 @@ def ListVideos(uri, name, page=0):
         return ObjectContainer(header=name, message="D'oh! Me Fail Videos? Unpossible!.")
 
     for index in range(num_thumbs):
-        url = NBC_URL + links[index]
+        url = common.NBC_URL + links[index]
         title = titles[index]
         thumb = thumbs[index]
 
@@ -153,7 +152,7 @@ def ListLatest(title):
         tray = data['trays'][tray_index]
         if tray['trayTitle'] == title:
             for entry in tray['entries']:
-                url = NBC_URL + entry['nodeUrl']
+                url = common.NBC_URL + entry['nodeUrl']
                 oc.add(VideoClipObject(url=url, title=entry['title'], thumb=entry['plmedia$defaultThumbnailUrl']))
 
     return oc
