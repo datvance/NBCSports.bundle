@@ -39,6 +39,8 @@ def MainMenu():
     oc = ObjectContainer()
 
     oc.add(DirectoryObject(key=Callback(LatestVideos), title="Latest Videos", thumb=R('latest-videos.jpg')))
+    oc.add(DirectoryObject(key=Callback(ListVideos, uri="league/premier-league", name="Premier League"),
+                           title="Premier League", thumb=R('premier-league.jpg')))
 
     # Iterate over all of the available categories and display them to the user.
     page = HTML.ElementFromURL(VIDEOS_URL)
