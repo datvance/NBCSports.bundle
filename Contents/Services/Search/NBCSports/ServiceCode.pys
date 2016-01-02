@@ -22,14 +22,17 @@ def Search(query, page=0):
     items = data.xpath('//article')
     common.log("search items: %d" % len(items))
     for item in items:
-        url = item.xpath('.//a/@href')[0]
-        common.log("search url: %s" % url)
-        if "/video/" in url:
-            url = common.NBC_URL + url
-            thumb = item.xpath('.//img/@src')[0]
-            title = item.xpath('.//div[@class="story__text"]/text()')[0]
-            common.log("%s | %s" % (title, url))
-            oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
+        try:
+            url = item.xpath('.//a/@href')[0]
+            common.log("search url: %s" % url)
+            if "/video/" in url:
+                url = common.NBC_URL + url
+                thumb = item.xpath('.//img/@src')[0]
+                title = item.xpath('.//div[@class="story__text"]/text()')[0]
+                common.log("%s | %s" % (title, url))
+                oc.add(VideoClipObject(url=url, title=title, thumb=thumb))
+        except Exception:
+            pass
 
     if len(oc) < 1:
         common.log ('nbcsports.com search query returned no results')
